@@ -9,13 +9,13 @@
 
 using namespace std;
 
-// 1. Dosyayý oku › her karakteri byte (unsigned char) olarak sakla
+// 1. Dosyayï¿½ oku ï¿½ her karakteri byte (unsigned char) olarak sakla hes
 vector<unsigned char> readBinaryFile(const string& filename) {
     vector<unsigned char> bytes;
-    ifstream file(filename, ios::binary); // binary modda açýyoruz
+    ifstream file(filename, ios::binary); // binary modda aï¿½ï¿½yoruz
 
     if (!file.is_open()) {
-        cerr << "Dosya açýlamadý: " << filename << endl;
+        cerr << "Dosya aï¿½ï¿½lamadï¿½: " << filename << endl;
         return bytes;
     }
 
@@ -28,13 +28,13 @@ vector<unsigned char> readBinaryFile(const string& filename) {
     return bytes;
 }
 
-// 2. Byte dizisini bit dizisine çevir
+// 2. Byte dizisini bit dizisine ï¿½evir
 vector<bool> bytesToBits(const vector<unsigned char>& bytes) {
     vector<bool> bits;
 
     for (unsigned char byte : bytes) {
-        bitset<8> b(byte); // byte › 8 bitlik bitset
-        // En anlamlý bitten baþlayarak sýrayla push et
+        bitset<8> b(byte); // byte ï¿½ 8 bitlik bitset
+        // En anlamlï¿½ bitten baï¿½layarak sï¿½rayla push et
         for (int i = 7; i >= 0; --i) {
             bits.push_back(b[i]);
         }
@@ -90,7 +90,7 @@ vector<bool> computeChecksum(const vector<vector<bool>>& frames) {
         unsigned int crc = 0;
         for (int j = 0; j < 16; ++j) {
             bool bit = frame[crcStart + j];
-            bit = !bit; // One’s complement (bit tersle)
+            bit = !bit; // Oneï¿½s complement (bit tersle)
             crc = (crc << 1) | bit;
         }
 
@@ -98,10 +98,10 @@ vector<bool> computeChecksum(const vector<vector<bool>>& frames) {
         total &= 0xFFFF; // 16 bit overflow
     }
 
-    // Two’s complement alma: 1's complement + 1
+    // Twoï¿½s complement alma: 1's complement + 1
     total = (~total + 1) & 0xFFFF;
 
-    // Bit dizisine çevir
+    // Bit dizisine ï¿½evir
     vector<bool> checksumBits(16);
     for (int i = 15; i >= 0; --i) {
         checksumBits[i] = (total & 1);
@@ -118,7 +118,7 @@ bool randomChance(int percent) {
 vector<bool> corruptFrame(const vector<bool>& frame) {
     vector<bool> corrupted = frame;
 
-    // Rastgele 1 bit ters çevirelim
+    // Rastgele 1 bit ters ï¿½evirelim
     int index = rand() % frame.size();
     corrupted[index] = !corrupted[index];
 
@@ -148,13 +148,13 @@ bool isChecksumFrame(const vector<bool>& frame) {
 
 bool stopAndWaitReceive(const vector<bool>& frame, const vector<bool>& generator) {
     if (isChecksumFrame(frame)) {
-        // %5 ihtimalle checksum bozulur (simülasyon)
+        // %5 ihtimalle checksum bozulur (simï¿½lasyon)
         if (randomChance(5)) {
             cout << "[Simulasyon] Checksum frame bozuldu!\n";
             return false;
         }
 
-        // ACK kaybý simülasyonu
+        // ACK kaybï¿½ simï¿½lasyonu
         if (randomChance(15)) {
             cout << "[Simulasyon] Checksum ACK kayboldu!\n";
             return false;
@@ -204,7 +204,7 @@ void stopAndWaitSend(const vector<vector<bool>>& frames, const vector<bool>& gen
         }
     }
 
-    // Checksum frame ayrý gönderiliyor
+    // Checksum frame ayrï¿½ gï¿½nderiliyor
     cout << "\n[Gonderici] Checksum frame gonderiliyor...\n";
 
     bool checksumAck = false;
@@ -214,7 +214,7 @@ void stopAndWaitSend(const vector<vector<bool>>& frames, const vector<bool>& gen
             continue;
         }
 
-        checksumAck = stopAndWaitReceive(checksumFrame, {}); // generator boþ çünkü CRC yok
+        checksumAck = stopAndWaitReceive(checksumFrame, {}); // generator boï¿½ ï¿½ï¿½nkï¿½ CRC yok
     }
 
     cout << "\nTum frame'ler ve checksum basariyla gonderildi.\n";
@@ -260,7 +260,7 @@ int main() {
 	for (int i = 0; i < frames.size(); ++i) {
 	    vector<bool> crc = calculateCRC16(frames[i], crc16_polynomial);
 	
-	    vector<bool> fullFrame = frames[i]; // kopyasýný al
+	    vector<bool> fullFrame = frames[i]; // kopyasï¿½nï¿½ al
 	    fullFrame.insert(fullFrame.end(), crc.begin(), crc.end());
 	
 	    framesWithCRC.push_back(fullFrame);
