@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>1000</width><height>700</height></rect>
+  </property>
+  <property name="windowTitle">
+   <string>VIBA Çerçeve Simülatörü</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainLayout">
+
+    <!-- === Dosya Seçimi + Başlatma === -->
+    <item>
+     <layout class="QHBoxLayout" name="fileLayout">
+      <item><widget class="QLineEdit" name="fileLineEdit"/></item>
+      <item><widget class="QPushButton" name="browseButton"><property name="text"><string>Browse</string></property></widget></item>
+      <item><widget class="QPushButton" name="startButton"><property name="text"><string>Start Transmission</string></property></widget></item>
+     </layout>
+    </item>
+
+    <!-- === Simülasyon Ayarları === -->
+    <item>
+     <layout class="QHBoxLayout" name="simSettingsLayout">
+      <item><widget class="QLabel" name="lblSimDesc"><property name="text"><string>⚙ Simülasyon Hızı (ms)</string></property></widget></item>
+      <item><widget class="QSlider" name="sliderSpeed">
+        <property name="minimum"><number>1</number></property>
+        <property name="maximum"><number>2000</number></property>
+        <property name="value"><number>800</number></property>
+        <property name="orientation"><enum>Qt::Horizontal</enum></property>
+        <property name="tickInterval"><number>100</number></property>
+        <property name="tickPosition"><enum>QSlider::TicksBelow</enum></property>
+      </widget></item>
+      <item><widget class="QLabel" name="lblSpeedValue"><property name="text"><string>800 ms</string></property></widget></item>
+     </layout>
+    </item>
+
+    <!-- === Simülasyon Kontrolleri (Pause, Resume) === -->
+    <item>
+     <layout class="QHBoxLayout" name="controlButtonsLayout">
+      <item><widget class="QPushButton" name="btnPause"><property name="text"><string>⏸ Pause</string></property></widget></item>
+      <item><widget class="QPushButton" name="btnResume"><property name="text"><string>▶ Resume</string></property></widget></item>
+     </layout>
+    </item>
+
+    <!-- === Ana Görselleştirme Alanı === -->
+    <item>
+     <layout class="QHBoxLayout" name="mainDisplayLayout">
+      <item>
+       <widget class="QWidget" name="graphicsContainer">
+        <property name="minimumSize"><size><width>500</width><height>400</height></size></property>
+        <layout class="QVBoxLayout" name="graphicsLayout"/>
+       </widget>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="rightSideLayout">
+        <item><widget class="QListWidget" name="frameListWidget"/></item>
+        <item><widget class="QTextEdit" name="statusTextEdit"><property name="readOnly"><bool>true</bool></property></widget></item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+
+    <!-- === Checksum Etiketi === -->
+    <item>
+     <widget class="QLabel" name="checksumLabel">
+      <property name="text"><string>Checksum: </string></property>
+      <property name="alignment"><set>Qt::AlignCenter</set></property>
+      <property name="minimumHeight"><number>25</number></property>
+     </widget>
+    </item>
+
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar"/>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
