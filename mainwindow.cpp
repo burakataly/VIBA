@@ -1,117 +1,110 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "transmission.h"
+#include "TransmissionGraphicsView.h"
+
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , transmission(nullptr)
+    , gfxView(nullptr)
 {
     ui->setupUi(this);
-    gfxView = new TransmissionGraphicsView(this);
-    QVBoxLayout *layout = qobject_cast<QVBoxLayout *>(ui->graphicsContainer->layout());
-    if (layout) {
-        layout->addWidget(gfxView);
-    }
 
-
+    // Başlangıç hızı gösterimi
+    ui->lblSpeedValue->setText(QString("%1 ms").arg(ui->sliderSpeed->value()));
+    connect(ui->sliderSpeed, &QSlider::valueChanged, this, [=](int val) {
+        ui->lblSpeedValue->setText(QString("%1 ms").arg(val));
+        if (transmission)
+            transmission->updateSimInterval(val);
+    });
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete transmission;
 }
 
-void MainWindow::on_browseButton_clicked()
+void MainWindow::on_btnSelectFile_clicked()
 {
-    // .dat uzantılı veri dosyasını seçmek için
-    QString fileName = QFileDialog::getOpenFileName(this, "Dosya Seç", "", "Data Files (*.dat)");
-    if(!fileName.isEmpty()) {
+    QString fileName = QFileDialog::getOpenFileName(this, "Veri Dosyası Seç", "", "Tüm Dosyalar (*.*)");
+    if (!fileName.isEmpty())
         ui->fileLineEdit->setText(fileName);
-    }
 }
 
-void MainWindow::on_startButton_clicked()
+void MainWindow::on_btnStart_clicked()
 {
-    gfxView = new TransmissionGraphicsView(this);
-    QVBoxLayout *layout = qobject_cast<QVBoxLayout *>(ui->graphicsLayout);
-    if (layout) layout->addWidget(gfxView);
-    gfxView->resetScene();
+    // Önce önceki Transmission nesnesini temizle
+    if (transmission) {
+        delete transmission;
+        transmission = nullptr;
+    }
 
+    // Grafik sahnesi hazırlanıyor
+    if (!gfxView) {
+        gfxView = new TransmissionGraphicsView(this);
+        if (ui->graphicsLayout) {
+            ui->graphicsLayout->addWidget(gfxView);
+        }
+    } else {
+        gfxView->resetScene();
+    }
+
+    // Dosya kontrolü
     QString fileName = ui->fileLineEdit->text();
     if (fileName.isEmpty()) {
         QMessageBox::warning(this, "Uyarı", "Lütfen bir dosya seçiniz.");
         return;
     }
 
-    if (transmission)
-        delete transmission;
+    // Yeni Transmission nesnesi oluşturuluyor
+    transmission = new Transmission(fileName, this);
+    transmission->setSimulateMode(true, ui->sliderSpeed->value());
 
-    transmission = new Transmission(fileName, this);  // ✅ transmission ARTIK VAR
-
-    int interval = ui->sliderSpeed->value();
-
-    // Sinyal bağlantıları
-    connect(transmission, &Transmission::statusUpdated, this, &MainWindow::updateStatus);
-    if (!transmission) return;
-
-    connect(transmission, &Transmission::frameProcessed, this, &MainWindow::updateFrameList);
-    if (!transmission) return;
-
-    connect(transmission, &Transmission::checksumCalculated, this, &MainWindow::updateChecksum);
-    if (!transmission) return;
-
-    connect(ui->sliderSpeed, &QSlider::valueChanged, this, [=](int val) {
-        ui->lblSpeedValue->setText(QString("%1 ms").arg(val));
-        if (transmission) {
-            transmission->updateSimInterval(val);
-        }
-    });
-
-    if (!transmission) return;
-
+    // SIGNAL-SLOT BAĞLANTILARI
+    connect(transmission, &Transmission::statusUpdated,
+            this, &MainWindow::updateStatus);
+    connect(transmission, &Transmission::frameProcessed,
+            this, &MainWindow::updateFrameList);
+    connect(transmission, &Transmission::checksumCalculated,
+            this, &MainWindow::updateChecksum);
+    connect(transmission, &Transmission::frameAnimationStatus,
+            gfxView, &TransmissionGraphicsView::animateFrame);
+    // ACK animasyonu bittikten sonra Transmission, onAckAnimationFinished() slotunu tetikler.
+    connect(gfxView, &TransmissionGraphicsView::ackAnimationFinished,
+            transmission, &Transmission::onAckAnimationFinished);
 
     transmission->startTransmission();
 }
 
-
-void MainWindow::updateStatus(QString status)
+void MainWindow::updateStatus(const QString &msg)
 {
-    ui->statusTextEdit->append(status);
-    if (status.contains("Frame")) {
-        int idx = status.section(' ', 1, 1).toInt() - 1;
-        if (status.contains("kayboldu"))
-            gfxView->setFrameStatus(idx, "lost");
-        else if (status.contains("bozuldu"))
-            gfxView->setFrameStatus(idx, "corrupted");
-        else if (status.contains("ACK alınamadı"))
-            gfxView->setFrameStatus(idx, "ack_failed");
-        else if (status.contains("başarıyla"))
-            gfxView->setFrameStatus(idx, "sent");
-        else if (status.contains("ACK geldi"))
-            gfxView->setFrameStatus(idx, "ack_ok");
-    }
+    ui->txtLog->append(msg);
 }
 
-
-void MainWindow::updateFrameList(QString frameInfo)
+void MainWindow::updateFrameList(const QString &info)
 {
-    ui->frameListWidget->addItem(frameInfo);
-    QString crc = frameInfo.section("=", -1).trimmed();
-    gfxView->addFrame(ui->frameListWidget->count() - 1, crc);
+    ui->listCRC->addItem(info);
 }
 
-
-void MainWindow::updateChecksum(QString checksum)
+void MainWindow::updateChecksum(const QString &checksum)
 {
-    ui->checksumLabel->setText("Checksum: " + checksum);
+    ui->lblChecksum->setText(checksum);
 }
 
-void MainWindow::on_btnPause_clicked() {
-    if (transmission) transmission->pause();
+void MainWindow::on_btnPause_clicked()
+{
+    if (transmission)
+        transmission->pause();
 }
 
-void MainWindow::on_btnResume_clicked() {
-    if (transmission) transmission->resume();
+void MainWindow::on_btnResume_clicked()
+{
+    if (transmission)
+        transmission->resume();
 }

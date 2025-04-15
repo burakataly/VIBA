@@ -30,25 +30,21 @@ class Ui_MainWindow
 {
 public:
     QWidget *centralwidget;
-    QVBoxLayout *mainLayout;
+    QVBoxLayout *verticalLayout;
     QHBoxLayout *fileLayout;
+    QPushButton *btnSelectFile;
     QLineEdit *fileLineEdit;
-    QPushButton *browseButton;
-    QPushButton *startButton;
-    QHBoxLayout *simSettingsLayout;
-    QLabel *lblSimDesc;
-    QSlider *sliderSpeed;
-    QLabel *lblSpeedValue;
-    QHBoxLayout *controlButtonsLayout;
+    QPushButton *btnStart;
+    QHBoxLayout *controlLayout;
     QPushButton *btnPause;
     QPushButton *btnResume;
-    QHBoxLayout *mainDisplayLayout;
-    QWidget *graphicsContainer;
-    QVBoxLayout *graphicsLayout;
-    QVBoxLayout *rightSideLayout;
-    QListWidget *frameListWidget;
-    QTextEdit *statusTextEdit;
-    QLabel *checksumLabel;
+    QSlider *sliderSpeed;
+    QLabel *lblSpeedValue;
+    QHBoxLayout *graphicsLayout;
+    QHBoxLayout *outputLayout;
+    QListWidget *listCRC;
+    QLabel *lblChecksum;
+    QTextEdit *txtLog;
     QMenuBar *menubar;
     QStatusBar *statusbar;
 
@@ -56,108 +52,85 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName("MainWindow");
-        MainWindow->resize(1000, 700);
+        MainWindow->resize(900, 600);
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName("centralwidget");
-        mainLayout = new QVBoxLayout(centralwidget);
-        mainLayout->setObjectName("mainLayout");
+        verticalLayout = new QVBoxLayout(centralwidget);
+        verticalLayout->setObjectName("verticalLayout");
         fileLayout = new QHBoxLayout();
         fileLayout->setObjectName("fileLayout");
+        btnSelectFile = new QPushButton(centralwidget);
+        btnSelectFile->setObjectName("btnSelectFile");
+
+        fileLayout->addWidget(btnSelectFile);
+
         fileLineEdit = new QLineEdit(centralwidget);
         fileLineEdit->setObjectName("fileLineEdit");
 
         fileLayout->addWidget(fileLineEdit);
 
-        browseButton = new QPushButton(centralwidget);
-        browseButton->setObjectName("browseButton");
 
-        fileLayout->addWidget(browseButton);
+        verticalLayout->addLayout(fileLayout);
 
-        startButton = new QPushButton(centralwidget);
-        startButton->setObjectName("startButton");
+        btnStart = new QPushButton(centralwidget);
+        btnStart->setObjectName("btnStart");
 
-        fileLayout->addWidget(startButton);
+        verticalLayout->addWidget(btnStart);
 
-
-        mainLayout->addLayout(fileLayout);
-
-        simSettingsLayout = new QHBoxLayout();
-        simSettingsLayout->setObjectName("simSettingsLayout");
-        lblSimDesc = new QLabel(centralwidget);
-        lblSimDesc->setObjectName("lblSimDesc");
-
-        simSettingsLayout->addWidget(lblSimDesc);
-
-        sliderSpeed = new QSlider(centralwidget);
-        sliderSpeed->setObjectName("sliderSpeed");
-        sliderSpeed->setMinimum(1);
-        sliderSpeed->setMaximum(2000);
-        sliderSpeed->setValue(800);
-        sliderSpeed->setOrientation(Qt::Horizontal);
-        sliderSpeed->setTickInterval(100);
-        sliderSpeed->setTickPosition(QSlider::TicksBelow);
-
-        simSettingsLayout->addWidget(sliderSpeed);
-
-        lblSpeedValue = new QLabel(centralwidget);
-        lblSpeedValue->setObjectName("lblSpeedValue");
-
-        simSettingsLayout->addWidget(lblSpeedValue);
-
-
-        mainLayout->addLayout(simSettingsLayout);
-
-        controlButtonsLayout = new QHBoxLayout();
-        controlButtonsLayout->setObjectName("controlButtonsLayout");
+        controlLayout = new QHBoxLayout();
+        controlLayout->setObjectName("controlLayout");
         btnPause = new QPushButton(centralwidget);
         btnPause->setObjectName("btnPause");
 
-        controlButtonsLayout->addWidget(btnPause);
+        controlLayout->addWidget(btnPause);
 
         btnResume = new QPushButton(centralwidget);
         btnResume->setObjectName("btnResume");
 
-        controlButtonsLayout->addWidget(btnResume);
+        controlLayout->addWidget(btnResume);
+
+        sliderSpeed = new QSlider(centralwidget);
+        sliderSpeed->setObjectName("sliderSpeed");
+        sliderSpeed->setMinimum(100);
+        sliderSpeed->setMaximum(2000);
+        sliderSpeed->setValue(800);
+        sliderSpeed->setOrientation(Qt::Horizontal);
+
+        controlLayout->addWidget(sliderSpeed);
+
+        lblSpeedValue = new QLabel(centralwidget);
+        lblSpeedValue->setObjectName("lblSpeedValue");
+
+        controlLayout->addWidget(lblSpeedValue);
 
 
-        mainLayout->addLayout(controlButtonsLayout);
+        verticalLayout->addLayout(controlLayout);
 
-        mainDisplayLayout = new QHBoxLayout();
-        mainDisplayLayout->setObjectName("mainDisplayLayout");
-        graphicsContainer = new QWidget(centralwidget);
-        graphicsContainer->setObjectName("graphicsContainer");
-        graphicsContainer->setMinimumSize(QSize(500, 400));
-        graphicsLayout = new QVBoxLayout(graphicsContainer);
+        graphicsLayout = new QHBoxLayout();
         graphicsLayout->setObjectName("graphicsLayout");
-        graphicsLayout->setContentsMargins(0, 0, 0, 0);
 
-        mainDisplayLayout->addWidget(graphicsContainer);
+        verticalLayout->addLayout(graphicsLayout);
 
-        rightSideLayout = new QVBoxLayout();
-        rightSideLayout->setObjectName("rightSideLayout");
-        frameListWidget = new QListWidget(centralwidget);
-        frameListWidget->setObjectName("frameListWidget");
+        outputLayout = new QHBoxLayout();
+        outputLayout->setObjectName("outputLayout");
+        listCRC = new QListWidget(centralwidget);
+        listCRC->setObjectName("listCRC");
 
-        rightSideLayout->addWidget(frameListWidget);
+        outputLayout->addWidget(listCRC);
 
-        statusTextEdit = new QTextEdit(centralwidget);
-        statusTextEdit->setObjectName("statusTextEdit");
-        statusTextEdit->setReadOnly(true);
+        lblChecksum = new QLabel(centralwidget);
+        lblChecksum->setObjectName("lblChecksum");
 
-        rightSideLayout->addWidget(statusTextEdit);
+        outputLayout->addWidget(lblChecksum);
 
 
-        mainDisplayLayout->addLayout(rightSideLayout);
+        verticalLayout->addLayout(outputLayout);
 
+        txtLog = new QTextEdit(centralwidget);
+        txtLog->setObjectName("txtLog");
+        txtLog->setReadOnly(true);
 
-        mainLayout->addLayout(mainDisplayLayout);
-
-        checksumLabel = new QLabel(centralwidget);
-        checksumLabel->setObjectName("checksumLabel");
-        checksumLabel->setAlignment(Qt::AlignCenter);
-        checksumLabel->setMinimumHeight(25);
-
-        mainLayout->addWidget(checksumLabel);
+        verticalLayout->addWidget(txtLog);
 
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
@@ -174,14 +147,13 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "VIBA \303\207er\303\247eve Sim\303\274lat\303\266r\303\274", nullptr));
-        browseButton->setText(QCoreApplication::translate("MainWindow", "Browse", nullptr));
-        startButton->setText(QCoreApplication::translate("MainWindow", "Start Transmission", nullptr));
-        lblSimDesc->setText(QCoreApplication::translate("MainWindow", "\342\232\231 Sim\303\274lasyon H\304\261z\304\261 (ms)", nullptr));
+        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "VIBA Sim\303\274lasyon", nullptr));
+        btnSelectFile->setText(QCoreApplication::translate("MainWindow", "Dosya Se\303\247", nullptr));
+        btnStart->setText(QCoreApplication::translate("MainWindow", "Ba\305\237lat", nullptr));
+        btnPause->setText(QCoreApplication::translate("MainWindow", "Duraklat", nullptr));
+        btnResume->setText(QCoreApplication::translate("MainWindow", "Devam Et", nullptr));
         lblSpeedValue->setText(QCoreApplication::translate("MainWindow", "800 ms", nullptr));
-        btnPause->setText(QCoreApplication::translate("MainWindow", "\342\217\270 Pause", nullptr));
-        btnResume->setText(QCoreApplication::translate("MainWindow", "\342\226\266 Resume", nullptr));
-        checksumLabel->setText(QCoreApplication::translate("MainWindow", "Checksum: ", nullptr));
+        lblChecksum->setText(QCoreApplication::translate("MainWindow", "Checksum: -", nullptr));
     } // retranslateUi
 
 };

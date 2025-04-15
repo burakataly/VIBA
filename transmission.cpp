@@ -1,5 +1,3 @@
-// === Güncellenmiş transmission.cpp ===
-
 #include "transmission.h"
 #include "crc.h"
 #include <QFile>
@@ -18,28 +16,26 @@ Transmission::Transmission(QString filePath, QObject *parent)
     m_attemptCount(0),
     m_simInterval(800),
     m_paused(false)
-
-
 {
+    m_simulate = true;
 }
 
 void Transmission::setSimulateMode(bool simulate, int interval)
 {
+    m_simulate = simulate;
     m_simInterval = interval;
 }
 
 void Transmission::updateSimInterval(int interval)
 {
     m_simInterval = interval;
-    if (m_simulate && frameTimer && frameTimer->isActive()) {
+    if (frameTimer && frameTimer->isActive()) {
         frameTimer->setInterval(m_simInterval);
     }
 }
 
 bool Transmission::randomChance(int percent)
 {
-    if (!m_simulate)
-        return false;
     bool result = QRandomGenerator::global()->bounded(100) < percent;
     qDebug() << "[RandomChance] %" << percent << "→" << result;
     return result;
@@ -82,15 +78,14 @@ void Transmission::startTransmission()
         emit statusUpdated("Dosya okunamadı.");
         return;
     }
-
     createFrames(data);
-    if (m_frames.isEmpty()) return;
+    if (m_frames.isEmpty())
+        return;
 
     m_crcCodes.clear();
     m_currentFrame = 0;
     m_attemptCount = 0;
     m_paused = false;
-
 
     emit statusUpdated("Gönderim başlatılıyor...");
     sendNextFrame();
@@ -108,7 +103,8 @@ void Transmission::sendNextFrame()
 
 void Transmission::attemptSendFrame()
 {
-    if (m_paused) return;
+    if (m_paused)
+        return;
 
     m_attemptCount++;
     emit statusUpdated(QString("[Gönderici] Frame %1 gönderiliyor... (Deneme %2)")
@@ -117,44 +113,86 @@ void Transmission::attemptSendFrame()
 
     bool transmissionSuccess = false;
 
+    // Simüle: %10 olasılıkla frame kaybolur
     if (randomChance(10)) {
         emit statusUpdated("[Simülasyon] Frame KAYBOLDU!");
+        emit frameAnimationStatus(m_currentFrame, "lost");
     } else {
         QByteArray frameToTransmit = m_frames[m_currentFrame];
-        if (randomChance(20)) {
+        bool dataCorrupt = randomChance(20);
+        if (dataCorrupt) {
             emit statusUpdated("[Simülasyon] Frame BOZULDU!");
+            emit frameAnimationStatus(m_currentFrame, "corrupt");
             if (!frameToTransmit.isEmpty())
                 frameToTransmit[0] ^= 0x01;
+        } else {
+            emit frameAnimationStatus(m_currentFrame, "success");
         }
         quint16 originalCRC = calculateCRC(m_frames[m_currentFrame]);
         quint16 receivedCRC = calculateCRC(frameToTransmit);
-        if (receivedCRC != originalCRC) {
-            emit statusUpdated("[Alıcı] CRC hatası! Frame geçersiz.");
+        // Eğer veri bozulduysa ve CRC uyuşmuyorsa; ACK olarak "ack_bad" simülasyonu
+        if (dataCorrupt && (receivedCRC != originalCRC)) {
+            // Bu durumda, ACK animasyonu view tarafından çalışsın, ancak hatalı ACK sinyali (ack_bad)
+            // şimdi de gecikmeli şekilde tetiklenecek.
+            QTimer::singleShot(m_simInterval, this, [this]() {
+                attemptAckForFrame(true);  // true => ack_bad isteniyor
+            });
+            return;
         } else {
-            if (randomChance(15)) {
-                emit statusUpdated("[Simülasyon] ACK KAYBOLDU!");
-            } else {
-                emit statusUpdated("[Alıcı] ACK alındı. Frame doğru alındı.");
-                transmissionSuccess = true;
-            }
+            // Veri frame başarılı; bekleyip ACK aşamasına geçelim.
+            QTimer::singleShot(m_simInterval, this, [this]() {
+                attemptAckForFrame(false);
+            });
+            return;
         }
     }
-
-    QTimer::singleShot(m_simInterval, this, [this, transmissionSuccess]() {
-        if (transmissionSuccess) {
-            quint16 crc = calculateCRC(m_frames[m_currentFrame]);
-            m_crcCodes.append(crc);
-            emit frameProcessed(QString("Frame %1: CRC = 0x%2")
-                                    .arg(m_currentFrame + 1)
-                                    .arg(crc, 4, 16, QLatin1Char('0')));
-            m_currentFrame++;
-            m_attemptCount = 0;
-            sendNextFrame();
-        } else {
-            attemptSendFrame();
-        }
-
+    QTimer::singleShot(m_simInterval, this, [this]() {
+        attemptSendFrame();
     });
+}
+
+void Transmission::attemptAckForFrame(bool ackBad)
+{
+    if (randomChance(15)) {
+        emit statusUpdated("[Simülasyon] ACK KAYBOLDU!");
+        emit frameAnimationStatus(m_currentFrame, "ack_lost");
+        QTimer::singleShot(m_simInterval, this, [this]() {
+            attemptSendFrame();
+        });
+    } else {
+        if (ackBad) {
+            emit statusUpdated("[Alıcı] ACK (Hatalı) gönderiliyor.");
+            emit frameAnimationStatus(m_currentFrame, "ack_bad");
+        } else {
+            emit statusUpdated("[Alıcı] ACK gönderiliyor.");
+            emit frameAnimationStatus(m_currentFrame, "ack");
+        }
+        // Artık view, ack animasyonunu tamamladığında ackAnimationFinished sinyalini gönderecek.
+        // Transmission, onAckAnimationFinished() slotunda bu sinyali dinleyecek.
+    }
+}
+
+void Transmission::onAckAnimationFinished(int frameId, const QString &ackStatus)
+{
+    if (frameId != m_currentFrame)
+        return;
+
+    if (ackStatus == "ack") {
+        emit statusUpdated("[Alıcı] ACK alındı. Frame doğru alındı.");
+        quint16 crc = calculateCRC(m_frames[m_currentFrame]);
+        m_crcCodes.append(crc);
+        emit frameProcessed(QString("Frame %1: CRC = 0x%2")
+                                .arg(m_currentFrame + 1)
+                                .arg(crc, 4, 16, QLatin1Char('0')));
+        m_currentFrame++;
+        m_attemptCount = 0;
+        sendNextFrame();
+    } else if (ackStatus == "ack_bad") {
+        emit statusUpdated("[Alıcı] ACK alındı ancak frame hatalı alındı. Tekrar gönderiliyor.");
+        QTimer::singleShot(m_simInterval, this, [this]() {
+            attemptSendFrame();
+        });
+    }
 }
 
 void Transmission::sendChecksumFrame()
@@ -175,11 +213,13 @@ void Transmission::sendChecksumFrame()
     }
 
     emit statusUpdated("[Gönderici] Checksum frame gönderiliyor...");
+    emit frameAnimationStatus(m_currentFrame, transmissionSuccess ? "ack" : "corrupt");
 
-    QTimer::singleShot(m_simInterval, this, [this, checksumFrame, transmissionSuccess]() {
+    QTimer::singleShot(m_simInterval, this, [this, transmissionSuccess]() {
         bool ackReceived = transmissionSuccess;
         if (ackReceived && randomChance(15)) {
             emit statusUpdated("[Simülasyon] Checksum ACK KAYBOLDU!");
+            emit frameAnimationStatus(m_currentFrame, "ack_lost");
             ackReceived = false;
         }
         if (ackReceived) {
@@ -219,12 +259,10 @@ void Transmission::resume()
     if (m_paused) {
         m_paused = false;
         emit statusUpdated("[Kontrol] Simülasyon devam ediyor...");
-        if (!m_simulate || m_currentFrame < m_frames.size()) {
+        if (m_currentFrame < m_frames.size()) {
             QTimer::singleShot(m_simInterval, this, [this]() {
                 attemptSendFrame();
             });
         }
     }
 }
-
-

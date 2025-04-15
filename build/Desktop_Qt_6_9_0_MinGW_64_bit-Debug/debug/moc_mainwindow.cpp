@@ -39,40 +39,40 @@ template <> constexpr inline auto MainWindow::qt_create_metaobjectdata<qt_meta_t
     namespace QMC = QtMocConstants;
     QtMocHelpers::StringRefStorage qt_stringData {
         "MainWindow",
-        "on_browseButton_clicked",
+        "on_btnSelectFile_clicked",
         "",
-        "on_startButton_clicked",
-        "updateStatus",
-        "status",
-        "updateFrameList",
-        "frameInfo",
-        "updateChecksum",
-        "checksum",
+        "on_btnStart_clicked",
         "on_btnPause_clicked",
-        "on_btnResume_clicked"
+        "on_btnResume_clicked",
+        "updateStatus",
+        "msg",
+        "updateFrameList",
+        "info",
+        "updateChecksum",
+        "checksum"
     };
 
     QtMocHelpers::UintData qt_methods {
-        // Slot 'on_browseButton_clicked'
+        // Slot 'on_btnSelectFile_clicked'
         QtMocHelpers::SlotData<void()>(1, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'on_startButton_clicked'
+        // Slot 'on_btnStart_clicked'
         QtMocHelpers::SlotData<void()>(3, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_btnPause_clicked'
+        QtMocHelpers::SlotData<void()>(4, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'on_btnResume_clicked'
+        QtMocHelpers::SlotData<void()>(5, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'updateStatus'
-        QtMocHelpers::SlotData<void(QString)>(4, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { QMetaType::QString, 5 },
-        }}),
-        // Slot 'updateFrameList'
-        QtMocHelpers::SlotData<void(QString)>(6, 2, QMC::AccessPrivate, QMetaType::Void, {{
+        QtMocHelpers::SlotData<void(const QString &)>(6, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::QString, 7 },
         }}),
-        // Slot 'updateChecksum'
-        QtMocHelpers::SlotData<void(QString)>(8, 2, QMC::AccessPrivate, QMetaType::Void, {{
+        // Slot 'updateFrameList'
+        QtMocHelpers::SlotData<void(const QString &)>(8, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::QString, 9 },
         }}),
-        // Slot 'on_btnPause_clicked'
-        QtMocHelpers::SlotData<void()>(10, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'on_btnResume_clicked'
-        QtMocHelpers::SlotData<void()>(11, 2, QMC::AccessPrivate, QMetaType::Void),
+        // Slot 'updateChecksum'
+        QtMocHelpers::SlotData<void(const QString &)>(10, 2, QMC::AccessPrivate, QMetaType::Void, {{
+            { QMetaType::QString, 11 },
+        }}),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -96,13 +96,13 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     auto *_t = static_cast<MainWindow *>(_o);
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: _t->on_browseButton_clicked(); break;
-        case 1: _t->on_startButton_clicked(); break;
-        case 2: _t->updateStatus((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 3: _t->updateFrameList((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 4: _t->updateChecksum((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 5: _t->on_btnPause_clicked(); break;
-        case 6: _t->on_btnResume_clicked(); break;
+        case 0: _t->on_btnSelectFile_clicked(); break;
+        case 1: _t->on_btnStart_clicked(); break;
+        case 2: _t->on_btnPause_clicked(); break;
+        case 3: _t->on_btnResume_clicked(); break;
+        case 4: _t->updateStatus((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 5: _t->updateFrameList((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 6: _t->updateChecksum((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         default: ;
         }
     }

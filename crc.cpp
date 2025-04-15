@@ -9,7 +9,6 @@ quint16 CRC::computeCRC(const QByteArray &data)
         bool inputBit = (bitChar == '1');
         bool msb = (crc & 0x8000) != 0;
         crc <<= 1;
-        // Eğer MSB ile girilen bit farklıysa, polinomla XOR işlemi yapılıyor.
         if (msb ^ inputBit) {
             crc ^= poly;
         }

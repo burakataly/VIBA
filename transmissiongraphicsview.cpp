@@ -1,80 +1,133 @@
-// transmissiongraphicsview.cpp
-
-#include "transmissiongraphicsview.h"
-#include <QGraphicsTextItem>
+#include "TransmissionGraphicsView.h"
+#include <QGraphicsEllipseItem>
 #include <QBrush>
+#include <QPen>
+#include <QGraphicsTextItem>
+#include <QTimer>
+#include <QDebug>
 
 TransmissionGraphicsView::TransmissionGraphicsView(QWidget *parent)
-    : QGraphicsView(parent), scene(new QGraphicsScene(this)), currentX(10)
+    : QGraphicsView(parent), m_scene(new QGraphicsScene(this))
 {
-    setScene(scene);
+    setScene(m_scene);
     setRenderHint(QPainter::Antialiasing);
-    setMouseTracking(true);               // ✅ tooltip için gerekli
-    viewport()->setMouseTracking(true);   // ✅ alt view'a da yay
+    setMinimumSize(600, 300);
+    m_scene->setSceneRect(0, 0, 800, 300);
+    resetScene();
 }
-
 
 void TransmissionGraphicsView::resetScene()
 {
-    scene->clear();
-    frameItems.clear();
-    currentX = 10;
+    m_scene->clear();
+    frameMap.clear();
+    createNodes();
 }
 
-void TransmissionGraphicsView::addFrame(int index, QString crc)
+void TransmissionGraphicsView::createNodes()
 {
-    QGraphicsRectItem *rect = scene->addRect(currentX, 50, 80, 40, QPen(Qt::black), QBrush(Qt::lightGray));
-    rect->setAcceptHoverEvents(true); // ✅ Tooltip'ler için kritik
-    QGraphicsTextItem *label = scene->addText(QString("F%1").arg(index+1));
-    label->setPos(currentX + 10, 55);
+    senderPos = QPointF(50, 100);
+    receiverPos = QPointF(600, 100);
 
-    frameItems[index] = rect;
-    frameCRCMap[index] = crc;
-    frameStatusMap[index] = "Hazır";
+    senderNode = m_scene->addRect(0, 0, 80, 80, QPen(Qt::darkGreen), QBrush(Qt::green));
+    senderNode->setPos(senderPos);
+    auto senderText = m_scene->addSimpleText("Gönderici");
+    senderText->setPos(senderPos.x(), senderPos.y() + 85);
 
-    rect->setToolTip(QString("Frame #%1\nCRC: 0x%2\nDurum: %3")
-                         .arg(index+1)
-                         .arg(crc)
-                         .arg("Hazır"));
-
-    currentX += 100;
+    receiverNode = m_scene->addRect(0, 0, 80, 80, QPen(Qt::darkBlue), QBrush(Qt::blue));
+    receiverNode->setPos(receiverPos);
+    auto receiverText = m_scene->addSimpleText("Alıcı");
+    receiverText->setPos(receiverPos.x(), receiverPos.y() + 85);
 }
 
-
-
-void TransmissionGraphicsView::setFrameStatus(int index, const QString &status)
+void TransmissionGraphicsView::animateFrame(int frameId, const QString &status)
 {
-    if (!frameItems.contains(index)) return;
+    // ACK animasyonları ters yönde (receiver'dan sender'a) olmalı.
+    bool reverse = (status == "ack" || status == "ack_lost" || status == "ack_bad");
+    QColor color = colorForStatus(status);
 
-    // Renk değiştir
-    QBrush brush;
-    if (status == "sent") brush = QBrush(Qt::green);
-    else if (status == "corrupted") brush = QBrush(Qt::red);
-    else if (status == "lost") brush = QBrush(Qt::gray);
-    else if (status == "ack_failed") brush = QBrush(Qt::yellow);
-    else brush = QBrush(Qt::blue); // ack_ok
-    frameItems[index]->setBrush(brush);
+    // Oluşturulacak frame kutusu: 40x40
+    QGraphicsRectItem *rect = m_scene->addRect(0, 0, 40, 40, QPen(Qt::black), QBrush(color));
+    rect->setZValue(1);
 
-    // Tooltip bilgilerini güncelle
-    frameStatusMap[index] = status;
-    QString tooltip = QString("Frame #%1\nCRC: 0x%2\nDurum: %3")
-                          .arg(index+1)
-                          .arg(frameCRCMap[index])
-                          .arg(frameStatusMap[index]);
-    frameItems[index]->setToolTip(tooltip);
+    // Ekranda, frame numarasını yazdırmak için küçük text ekleyelim.
+    QGraphicsTextItem *numText = m_scene->addText(QString::number(frameId + 1));
+    numText->setDefaultTextColor(Qt::black);
 
-    // Oku da renklendir (varsa)
-    if (arrowItems.contains(index)) {
-        QPen pen;
-        if (status == "sent") pen = QPen(Qt::green, 2);
-        else if (status == "corrupted") pen = QPen(Qt::red, 2, Qt::DashLine);
-        else if (status == "lost") pen = QPen(Qt::gray, 2, Qt::DotLine);
-        else pen = QPen(Qt::yellow, 2);
-        arrowItems[index]->setVisible(true);
-        arrowItems[index]->setPen(pen);
-
-
-
+    if (!reverse) {
+        rect->setPos(senderPos.x() + 100, senderPos.y() + 20);
+        numText->setPos(rect->pos().x() + 10, rect->pos().y() + 10);
+    } else {
+        rect->setPos(receiverPos.x() - 40, receiverPos.y() + 20);
+        numText->setPos(rect->pos().x() + 10, rect->pos().y() + 10);
     }
+
+    frameMap[frameId] = rect;
+    animateRect(frameId, rect, status, reverse);
 }
 
+void TransmissionGraphicsView::animateRect(int frameId, QGraphicsRectItem *item, const QString &status, bool reverse)
+{
+    QPointF start, end;
+    if (!reverse) {
+        start = senderPos + QPointF(100, 20);
+        end = receiverPos + QPointF(0, 20);
+    } else {
+        start = receiverPos + QPointF(-40, 20);
+        end = senderPos + QPointF(100, 20);
+    }
+
+    int duration = 1000;
+    int steps = 20;
+    int interval = duration / steps;
+    int currentStep = 0;
+    QPointF delta = (end - start) / steps;
+    item->setPos(start);
+
+    QTimer *moveTimer = new QTimer(this);
+    connect(moveTimer, &QTimer::timeout, this, [=]() mutable {
+        item->moveBy(delta.x(), delta.y());
+        currentStep++;
+
+        // Eğer frame "lost" veya "ack_lost", yarıda opaklık 0 olur.
+        if ((status == "lost" || status == "ack_lost") && currentStep == steps/2) {
+            item->setOpacity(0.0);
+        }
+
+        if (currentStep >= steps) {
+            moveTimer->stop();
+            // Eğer ACK animasyonu (ters yönde) ise, animasyonun bitişinde ackAnimationFinished sinyalini gönder.
+            if (reverse) {
+                emit ackAnimationFinished(frameId, status);
+            }
+            if (status == "corrupt") {
+                QTimer *blinkTimer = new QTimer(this);
+                int blinkCount = 6;
+                connect(blinkTimer, &QTimer::timeout, this, [=]() mutable {
+                    QColor currentColor = item->brush().color();
+                    item->setBrush(currentColor == Qt::red ? Qt::white : Qt::red);
+                    if (--blinkCount == 0) {
+                        blinkTimer->stop();
+                        m_scene->removeItem(item);
+                        delete item;
+                        blinkTimer->deleteLater();
+                    }
+                });
+                blinkTimer->start(150);
+            } else {
+                m_scene->removeItem(item);
+                delete item;
+            }
+            moveTimer->deleteLater();
+        }
+    });
+    moveTimer->start(interval);
+}
+
+QColor TransmissionGraphicsView::colorForStatus(const QString &status)
+{
+    if (status == "corrupt" || status == "ack_bad")
+        return Qt::red;
+    if (status == "ack" || status == "ack_lost" )
+        return Qt::cyan;
+    return Qt::green; // lost veya success
+}

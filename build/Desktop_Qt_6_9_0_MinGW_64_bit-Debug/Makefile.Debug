@@ -325,10 +325,10 @@ debug/moc_mainwindow.cpp: ../../mainwindow.h \
 		C:/Qt/6.9.0/mingw_64/include/QtGui/qguiapplication_platform.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qtabwidget.h \
 		../../transmission.h \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QString \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QByteArray \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QVector \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qvector.h \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/QTimer \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/qtimer.h \
 		../../transmissiongraphicsview.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/QGraphicsView \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qgraphicsview.h \
@@ -459,10 +459,10 @@ debug/moc_transmission.cpp: ../../transmission.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qscopeguard.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qobject_impl.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qbindingstorage.h \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QString \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QByteArray \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QVector \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qvector.h \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/QTimer \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/qtimer.h \
 		debug/moc_predefs.h \
 		C:/Qt/6.9.0/mingw_64/bin/moc.exe
 	C:\Qt\6.9.0\mingw_64\bin\moc.exe $(DEFINES) --include C:/Users/varso/Documents/viba/build/Desktop_Qt_6_9_0_MinGW_64_bit-Debug/debug/moc_predefs.h -IC:/Qt/6.9.0/mingw_64/mkspecs/win32-g++ -IC:/Users/varso/Documents/viba -IC:/Qt/6.9.0/mingw_64/include -IC:/Qt/6.9.0/mingw_64/include/QtWidgets -IC:/Qt/6.9.0/mingw_64/include/QtGui -IC:/Qt/6.9.0/mingw_64/include/QtCore -I. -IC:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++ -IC:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/x86_64-w64-mingw32 -IC:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/c++/backward -IC:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include -IC:/Qt/Tools/mingw1310_64/lib/gcc/x86_64-w64-mingw32/13.1.0/include-fixed -IC:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include ..\..\transmission.h -o debug\moc_transmission.cpp
@@ -908,10 +908,10 @@ debug/main.o: ../../main.cpp C:/Qt/6.9.0/mingw_64/include/QtWidgets/QApplication
 		C:/Qt/6.9.0/mingw_64/include/QtGui/qscreen_platform.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qtabwidget.h \
 		../../transmission.h \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QString \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QByteArray \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QVector \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qvector.h \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/QTimer \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/qtimer.h \
 		../../transmissiongraphicsview.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/QGraphicsView \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qgraphicsview.h \
@@ -1130,10 +1130,10 @@ debug/mainwindow.o: ../../mainwindow.cpp ../../mainwindow.h \
 		C:/Qt/6.9.0/mingw_64/include/QtGui/qguiapplication_platform.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qtabwidget.h \
 		../../transmission.h \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QString \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QByteArray \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QVector \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qvector.h \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/QTimer \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/qtimer.h \
 		../../transmissiongraphicsview.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/QGraphicsView \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qgraphicsview.h \
@@ -1188,6 +1188,7 @@ debug/mainwindow.o: ../../mainwindow.cpp ../../mainwindow.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/QPushButton \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qpushbutton.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qabstractbutton.h \
+		C:/Qt/6.9.0/mingw_64/include/QtWidgets/QSlider \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/QStatusBar \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/qstatusbar.h \
 		C:/Qt/6.9.0/mingw_64/include/QtWidgets/QTextEdit \
@@ -1392,11 +1393,12 @@ debug/transmission.o: ../../transmission.cpp ../../transmission.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qscopeguard.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qobject_impl.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qbindingstorage.h \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QString \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QByteArray \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QVector \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qvector.h \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/QTimer \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/qtimer.h \
 		../../crc.h \
+		C:/Qt/6.9.0/mingw_64/include/QtCore/QByteArray \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QtGlobal \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QFile \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qfile.h \
@@ -1416,8 +1418,6 @@ debug/transmission.o: ../../transmission.cpp ../../transmission.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qset.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qhash.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qvarlengtharray.h \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/QTimer \
-		C:/Qt/6.9.0/mingw_64/include/QtCore/qtimer.h \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/QRandomGenerator \
 		C:/Qt/6.9.0/mingw_64/include/QtCore/qrandom.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\transmission.o ..\..\transmission.cpp

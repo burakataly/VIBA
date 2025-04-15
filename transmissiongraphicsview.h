@@ -1,5 +1,3 @@
-// transmissiongraphicsview.h
-
 #ifndef TRANSMISSIONGRAPHICSVIEW_H
 #define TRANSMISSIONGRAPHICSVIEW_H
 
@@ -7,6 +5,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsRectItem>
 #include <QMap>
+#include <QGraphicsTextItem>
 
 class TransmissionGraphicsView : public QGraphicsView
 {
@@ -14,17 +13,25 @@ class TransmissionGraphicsView : public QGraphicsView
 public:
     explicit TransmissionGraphicsView(QWidget *parent = nullptr);
     void resetScene();
-    void addFrame(int index, QString crc);
-    void setFrameStatus(int index, const QString &status);  // "sent", "corrupted", "lost", "ack_failed", "ack_ok"
+    void animateFrame(int frameId, const QString &status);
+
+signals:
+    // ACK animasyonu tamamlandığında view, ACK'nin durumunu bildirir.
+    // ackStatus değerleri: "ack", "ack_lost", "ack_bad"
+    void ackAnimationFinished(int frameId, const QString &ackStatus);
 
 private:
-    QMap<int, QGraphicsLineItem*> arrowItems;
-    QMap<int, QString> frameCRCMap;
-    QMap<int, QString> frameStatusMap;
+    QGraphicsScene *m_scene;
+    QGraphicsItem *senderNode;
+    QGraphicsItem *receiverNode;
+    QMap<int, QGraphicsRectItem*> frameMap;
 
-    QGraphicsScene *scene;
-    QMap<int, QGraphicsRectItem*> frameItems;
-    int currentX;
+    QPointF senderPos;
+    QPointF receiverPos;
+
+    void createNodes();
+    void animateRect(int frameId, QGraphicsRectItem *item, const QString &status, bool reverse = false);
+    QColor colorForStatus(const QString &status);
 };
 
 #endif // TRANSMISSIONGRAPHICSVIEW_H
