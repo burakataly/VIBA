@@ -89,7 +89,7 @@ void Transmission::sendFrame(){
     else{
         emit guiEvent({GuiEvent::FrameTx,idx,"success"});
         emit logLine(QString("Frame %1 gönderildi\n"
-            "  ▶ Data  : %2\n").arg(idx+1).arg(QString(fr.data.toHex(' '))).arg(fr.crc,4,16,QLatin1Char('0')));
+            "  ▶ Data  : %2\n").arg(idx+1).arg(QString(fr.data.toHex(' '))));
     }
     waiting=true; timer.start();
     Frame recv=Frame::fromByteArray(raw); QByteArray hdr; hdr.append(char(Frame::FLAG)).append(char(recv.ctrl)).append(recv.data);
@@ -138,7 +138,7 @@ void Transmission::finishImmediately()
         crcs.append(fr.crc);
         emit logLine(frameInfoLine(idx, fr));       // ayrıntılı satır
         emit logLine(QString("Frame %1 gönderildi\n"
-                             "  ▶ Data  : %2\n").arg(idx+1).arg(QString(fr.data.toHex(' '))).arg(fr.crc,4,16,QLatin1Char('0')));
+                             "  ▶ Data  : %2\n").arg(idx+1).arg(QString(fr.data.toHex(' '))));
     }
 
 
