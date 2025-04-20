@@ -51,6 +51,7 @@ private:
     quint8 computeChecksum() const; // 8‑bit
     bool finishing = false;
     QString frameInfoLine(int idx, const Frame &fr) const; // açıklayıcı satır
+    void processReceivedFrame(const QByteArray &raw, int frameIndex);
 
     QString path;
     QVector<Frame> frames;

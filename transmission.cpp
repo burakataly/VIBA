@@ -81,22 +81,69 @@ void Transmission::splitFrames(const QByteArray &d)
     }
 }
 
+void Transmission::processReceivedFrame(const QByteArray &raw, int frameIndex) {
+    // Ham bayt dizisinden Frame'e çevir
+    Frame recv = Frame::fromByteArray(raw);
+    quint8 ctrl = recv.ctrl;
+    bool isChecksum = (ctrl & TYPE_MASK) != 0;
+
+    // HEADER yeniden oluşturup CRC kontrolü
+    QByteArray hdr;
+    hdr.append(char(Frame::FLAG))
+        .append(char(ctrl))
+        .append(recv.data);
+    bool crcOk = (CRC::calc(hdr) == recv.crc);
+
+    if (isChecksum) {
+        // --- Checksum frame işle ---
+        quint8 checksumData      = static_cast<quint8>(recv.data.at(0));
+        quint8 receiverCalculated = computeChecksum();
+        bool checksumOk          = (receiverCalculated == checksumData);
+
+        if (!crcOk) {
+            emit logLine("▶ Gelen checksum frame, CRC HATASI");
+        } else if (!checksumOk) {
+            emit logLine("▶ Gelen checksum frame, CS HATASI");
+        } else {
+            emit logLine(
+                QString("▶ Gelen checksum frame.CS=0x%1  CRC_OK")
+                    .arg(checksumData, 2, 16, QLatin1Char('0')));
+            emit checksumReady(
+                QString("0x%1").arg(checksumData, 2, 16, QLatin1Char('0')));
+        }
+
+        // ACK/NAK gönder (sendAck içinde %15 kayıp simülasyonu da var)
+        sendAck(!crcOk || !checksumOk);
+
+    } else {
+        // --- Data frame işle ---
+        if (crcOk) {
+            emit logLine(
+                QString("▶ Frame %1 başarıyla alındı (CRC OK)").arg(frameIndex + 1));
+        } else {
+            emit logLine(
+                QString("▶ Frame %1 hatalı (CRC HATA)").arg(frameIndex + 1));
+        }
+        sendAck(!crcOk);
+    }
+}
+
+
 void Transmission::sendChecksumFrame(quint8 cs)
 {
-    // — frame objesini hazırla —
+    // Çerçeveyi hazırla
     Frame ck;
-    ck.ctrl = 0x10; // sequence i onemli degil type ini belirtsek yeter checksum icin
+    ck.ctrl = 0x10;  // type = checksum
     ck.data.fill(0, 13);
     ck.data[0] = char(cs);
 
-    // %5 yanlış hesap simülasyonu —
-    bool wrongCalc = randomChance(5);
-    if (wrongCalc)
-    {
+    // %5 yanlış hesap simülasyonu
+    if (randomChance(5)) {
         ck.data[0] ^= 0x01;
         emit logLine("Checksum [YANLIŞ] hesaplandı");
     }
 
+    // CRC
     QByteArray hdr0;
     hdr0.append(char(Frame::FLAG))
         .append(char(ck.ctrl))
@@ -105,78 +152,34 @@ void Transmission::sendChecksumFrame(quint8 cs)
 
     QByteArray raw = ck.toByteArray();
 
-    // 2) kanal simülasyonu: %10 kayıp, %20 bozulma
-    bool lost = randomChance(10);
-    bool corrupt = randomChance(20);
-
-    // 3) log & GUI transmit
-    emit logLine(QString("▶ Checksum frame gönderiliyor DATA=0x%2  CRC=0x%3  %4")
-
-                     .arg(quint8(ck.data[0]), 2, 16, QLatin1Char('0'))
-                     .arg(ck.crc, 4, 16, QLatin1Char('0'))
-                     .arg(wrongCalc ? "(Gonderilen CheckSum [Yanlış])" : ""));
-    if (lost)
-    {
+    // Kanal simülasyonu: kayıp/bozulma
+    if (randomChance(10)) {
         emit guiEvent({GuiEvent::FrameTx, idx, "lost"});
         emit logLine("   ↳ Checksum frame kayboldu");
         waiting = true;
         timer.start();
         return;
     }
-    if (corrupt)
-    {
+    if (randomChance(20)) {
         raw[2] ^= 0xFF;
         emit guiEvent({GuiEvent::FrameTx, idx, "corrupt"});
         emit logLine("   ↳ Checksum frame [BOZULDU]");
-    }
-    else
-    {
+    } else {
         emit guiEvent({GuiEvent::FrameTx, idx, "success"});
         emit logLine("   ↳ Checksum frame [iletildi]");
     }
 
-    // 4) ACK bekleme
     waiting = true;
     timer.start();
 
-    // 5) alıcı simülasyonu ve ACK gönderme
-    QTimer::singleShot(interval, this, [=]()
-                       {
+    // Sadece ortak işleme metodu çağrılıyor
+    QTimer::singleShot(interval, this, [=]() {
         if (!waiting) return;
-
-        // raw’dan Frame’a dönüştür
-        Frame recv = Frame::fromByteArray(raw);
-        quint8 ctrl = recv.ctrl;
-        bool crcOk = false;
-        {
-            QByteArray hdr1;
-            hdr1.append(char(Frame::FLAG))
-                .append(char(ctrl))
-                .append(recv.data);
-            crcOk = (CRC::calc(hdr1) == recv.crc);
-        }
-
-        quint8 checksumData = static_cast<quint8>(recv.data.at(0));
-        quint8 receiverCalculated = computeChecksum();
-        bool checksumOk = (receiverCalculated == checksumData);
-
-
-        // %15 ACK kayıp simülasyonu
-        if (randomChance(15)) {
-            emit guiEvent({GuiEvent::AckTx, idx, "ack_lost"});
-            emit logLine("   ↳ ACK (checksum) kayboldu, timeout bekleniyor");
-            return;
-        }
-        // normal ACK / NAK
-
-        QString status = (crcOk && checksumOk) ? "ack" : "ack_bad";
-
-        emit guiEvent({GuiEvent::AckTx, idx, status});
-        emit logLine(
-            QString("   ↳ ACK (checksum) alındı: %1  (CS_OK=%2)")
-                .arg(status)
-                .arg(checksumOk)); });
+        processReceivedFrame(raw, idx);
+    });
 }
+
+
 
 void Transmission::sendNext()
 {
@@ -188,79 +191,42 @@ void Transmission::sendNext()
         sendChecksumFrame(cs);
     }
 }
-void Transmission::sendFrame()
-{
+
+void Transmission::sendFrame() {
     Frame fr = frames[idx];
     QByteArray raw = fr.toByteArray();
-    bool lost = randomChance(10);
+    bool lost    = randomChance(10);
     bool corrupt = randomChance(20);
+
     emit logLine(frameInfoLine(idx, fr));
-    if (lost)
-    {
+
+    if (lost) {
         emit guiEvent({GuiEvent::FrameTx, idx, "lost"});
         emit logLine("        ↳ Frame iletilemedi (kayboldu)");
         waiting = true;
         timer.start();
         return;
     }
-    if (corrupt)
-    {
+    if (corrupt) {
         raw[2] ^= 0xFF;
         emit guiEvent({GuiEvent::FrameTx, idx, "corrupt"});
         emit logLine("        ↳ Veri [BOZULDU]");
-    }
-    else
-    {
+    } else {
         emit guiEvent({GuiEvent::FrameTx, idx, "success"});
-        emit logLine(QString("Frame %1 gönderildi\n"
-                             "  ▶ Data  : %2\n")
-                         .arg(idx + 1)
-                         .arg(QString(fr.data.toHex(' '))));
+        emit logLine(
+            QString("Frame %1 gönderildi\n  ▶ Data  : %2\n")
+                .arg(idx + 1)
+                .arg(QString(fr.data.toHex(' '))));
     }
+
     waiting = true;
     timer.start();
-    QTimer::singleShot(interval, this, [=]()
-                       {
+
+    // Gelen frame’i işleme metodu
+    QTimer::singleShot(interval, this, [=]() {
         if (finishing) return;
-        // raw’dan Frame’a dönüştür
-        Frame recv = Frame::fromByteArray(raw);
-        quint8 ctrl = recv.ctrl;
-        bool isChecksum = (ctrl & TYPE_MASK) != 0;
-        quint8 seq     = ctrl & SEQ_MASK;
-
-        // header’ı yeniden oluştur
-        QByteArray hdr;
-        hdr.append(char(Frame::FLAG))
-            .append(char(ctrl))
-            .append(recv.data);
-
-        bool crcOk = (CRC::calc(hdr) == recv.crc);
-
-        if (isChecksum) {
-            // --- Checksum frame işle ---
-            if (crcOk) {
-                quint8 receivedCs = quint8(recv.data[0]);
-                emit logLine(QString("▶ Gelen checksum frame. SEQ=%1  CS=0x%2  CRC_OK")
-                                 .arg(seq)
-                                 .arg(receivedCs, 2, 16, QLatin1Char('0')));
-                emit checksumReady(
-                    QString("0x%1").arg(receivedCs, 2, 16, QLatin1Char('0')));
-            } else {
-                emit logLine("▶ Gelen checksum frame, CRC HATASI");
-            }
-            waiting = false;
-        } else {
-            // --- Data frame işle ---
-            if (crcOk) {
-                emit logLine(
-                    QString("▶ Frame %1 başarıyla alındı (CRC OK)").arg(idx+1));
-            } else {
-                emit logLine(
-                    QString("▶ Frame %1 hatalı (CRC HATA)").arg(idx+1));
-            }
-            // ACK/NAK gönder
-            sendAck(!crcOk);
-        } });
+        processReceivedFrame(raw, idx);
+    });
 }
 
 void Transmission::sendAck(bool bad)
