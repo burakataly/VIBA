@@ -34,8 +34,7 @@ void Transmission::sendChecksumFrame(quint8 cs)
 {
     /* -------- Frame oluştur -------- */
     Frame ck;
-    quint8 seq = idx & SEQ_MASK;
-    ck.ctrl = seq | TYPE_MASK;
+    ck.ctrl = 0x10; //sequence i onemli degil type ini belirtsek yeter checksum icin
     ck.data.fill(0, 13);
     ck.data[0] = char(cs);      // checksum kodu DATA[0]
 
