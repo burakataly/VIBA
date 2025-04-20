@@ -6,6 +6,8 @@
 #include <QVector>
 #include "frame.h"
 
+static constexpr quint8 SEQ_MASK  = 0x0F;  // 0000 1111
+static constexpr quint8 TYPE_MASK = 0x10;  // 0001 0000 checksum icin
 
 struct GuiEvent{ enum Kind{FrameTx,AckTx}; Kind kind; int id; QString status; };
 

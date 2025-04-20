@@ -23,7 +23,9 @@ void Transmission::splitFrames(const QByteArray &d){
     for(int i=0;i<bit.size();i+=per){
         QByteArray seg=bit.mid(i,per); QByteArray payload(13,0);
         for(int j=0;j<per;++j) if(seg[j]=='1') payload[j/8]|=(1<<(7-j%8));
-        Frame fr; fr.ctrl=seq; fr.data=payload; QByteArray hdr; hdr.append(char(Frame::FLAG)).append(char(fr.ctrl)).append(fr.data); fr.crc=CRC::calc(hdr);
+        Frame fr;
+        fr.ctrl=seq;
+        fr.data=payload; QByteArray hdr; hdr.append(char(Frame::FLAG)).append(char(fr.ctrl)).append(fr.data); fr.crc=CRC::calc(hdr);
         frames.append(fr); seq=(seq+1)&0x0F;
     }
 }
@@ -32,7 +34,8 @@ void Transmission::sendChecksumFrame(quint8 cs)
 {
     /* -------- Frame oluştur -------- */
     Frame ck;
-    ck.ctrl = 0x10;             // TYPE‑bit = 1  (özel header)
+    quint8 seq = idx & SEQ_MASK;
+    ck.ctrl = seq | TYPE_MASK;
     ck.data.fill(0, 13);
     ck.data[0] = char(cs);      // checksum kodu DATA[0]
 
@@ -73,13 +76,17 @@ void Transmission::sendNext(){
     }
 }
 void Transmission::sendFrame(){
-    Frame fr=frames[idx]; QByteArray raw=fr.toByteArray();
-    bool lost=randomChance(10); bool corrupt=randomChance(20);
+    Frame fr=frames[idx];
+    QByteArray raw=fr.toByteArray();
+    bool lost=randomChance(10);
+    bool corrupt=randomChance(20);
     emit logLine(frameInfoLine(idx, fr));
     if(lost){
         emit guiEvent({GuiEvent::FrameTx,idx,"lost"});
         emit logLine("        ↳ Frame iletilemedi (kayboldu)");
-        waiting=true; timer.start(); return;
+        waiting=true;
+        timer.start();
+        return;
     }
     if(corrupt){
         raw[2]^=0xFF;
@@ -91,11 +98,51 @@ void Transmission::sendFrame(){
         emit logLine(QString("Frame %1 gönderildi\n"
             "  ▶ Data  : %2\n").arg(idx+1).arg(QString(fr.data.toHex(' '))));
     }
-    waiting=true; timer.start();
-    Frame recv=Frame::fromByteArray(raw); QByteArray hdr; hdr.append(char(Frame::FLAG)).append(char(recv.ctrl)).append(recv.data);
-    bool crcOk=CRC::calc(hdr)==recv.crc;
-    QTimer::singleShot(interval,this,[=]{ sendAck(!crcOk);});
+    waiting=true;
+    timer.start();
+    QTimer::singleShot(interval, this, [=](){
+        // raw’dan Frame’a dönüştür
+        Frame recv = Frame::fromByteArray(raw);
+        quint8 ctrl = recv.ctrl;
+        bool isChecksum = (ctrl & TYPE_MASK) != 0;
+        quint8 seq     = ctrl & SEQ_MASK;
+
+        // header’ı yeniden oluştur
+        QByteArray hdr;
+        hdr.append(char(Frame::FLAG))
+            .append(char(ctrl))
+            .append(recv.data);
+
+        bool crcOk = (CRC::calc(hdr) == recv.crc);
+
+        if (isChecksum) {
+            // --- Checksum frame işle ---
+            if (crcOk) {
+                quint8 receivedCs = quint8(recv.data[0]);
+                emit logLine(QString("▶ Gelen checksum frame. SEQ=%1  CS=0x%2  CRC_OK")
+                                 .arg(seq)
+                                 .arg(receivedCs, 2, 16, QLatin1Char('0')));
+                emit checksumReady(
+                    QString("0x%1").arg(receivedCs, 2, 16, QLatin1Char('0')));
+            } else {
+                emit logLine("▶ Gelen checksum frame, CRC HATASI");
+            }
+            waiting = false;
+        } else {
+            // --- Data frame işle ---
+            if (crcOk) {
+                emit logLine(
+                    QString("▶ Frame %1 başarıyla alındı (CRC OK)").arg(idx+1));
+            } else {
+                emit logLine(
+                    QString("▶ Frame %1 hatalı (CRC HATA)").arg(idx+1));
+            }
+            // ACK/NAK gönder
+            sendAck(!crcOk);
+        }
+    });
 }
+
 void Transmission::sendAck(bool bad){
     if(!waiting) return;
     if(randomChance(15)){ emit guiEvent({GuiEvent::AckTx,idx,"ack_lost"});
