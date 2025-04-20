@@ -137,6 +137,8 @@ void Transmission::sendChecksumFrame(quint8 cs)
     ck.data.fill(0, 13);
     ck.data[0] = char(cs);
 
+    emit logLine("▶ Checksum frame yollanıyor");
+
     // %5 yanlış hesap simülasyonu
     if (randomChance(5)) {
         ck.data[0] ^= 0x01;
@@ -155,7 +157,7 @@ void Transmission::sendChecksumFrame(quint8 cs)
     // Kanal simülasyonu: kayıp/bozulma
     if (randomChance(10)) {
         emit guiEvent({GuiEvent::FrameTx, idx, "lost"});
-        emit logLine("   ↳ Checksum frame kayboldu");
+        emit logLine("   ↳ Checksum frame [kayboldu]");
         waiting = true;
         timer.start();
         return;
