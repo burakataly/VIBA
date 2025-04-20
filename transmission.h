@@ -37,6 +37,7 @@ private:
     void sendFrame();
     void sendAck(bool bad);
     quint8  computeChecksum() const;      // 8‑bit
+    bool finishing = false;
     QString frameInfoLine(int idx, const Frame &fr) const;   // açıklayıcı satır
 
     QString path;
